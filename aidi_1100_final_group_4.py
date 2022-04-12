@@ -25,10 +25,15 @@ Course code:  AIDI_1100; submission date: 12-04-2022(DD-MM-YYYY)???
 
 This project consists of 4 parts: 
 1.   Scan/sparse: is implemented in the function get_news_data, it contains the instructions: 1.the url is composed 2. the get request is executed for the news url and 3. parsing the request by using BeautifulSoap and the parser html5lib.
-2.   Track/Store: is implemented in the function get_news_data by localising the div class which contains the news information for the specified period of time. After accessing the information, the function stores it on the excel file
-1.   Retrieve Data (code strategy TBA)
+2.   Track/Store: a. is implemented in the function get_news_data by localising the div class which contains the news information for the specified period of time. After accessing the information, the function stores it on the excel file
+b.is implemented the function get_stock_data, which is called inside get_news_data and has an array parameter from which are extracted all the tickers with the pattern NASDAQ:
+1.   Retrieve Data consists of a. selecting randomly three stock symbols 
+and b.get_ticker_info function which prints stock data(volume, price)
 2.   Visualize consists of two functions: **1**.plot_time_series, which plots dinamically 2 time series using plotly, one for Volume and another for Closing Price, the results on the graphs appear for different periode of time(monthly, for 6 months,Year to date (YTD) refers to the period of time beginning the first day of the current calendar year or fiscal year up to the current date, yearly and all. 
-**Extra part **Candlestick function, which plots candlestick chart for each ticker in data for the same period as the 1st function.** **All charts have the feature stepmode="backward", which does the charts user-interactive to go back and forward** 
+
+**Extra part 
+1. **Candlestick function, which plots candlestick chart for each ticker in data for the same period as the 1st function.** **All charts have the feature stepmode="backward", which does the charts user-interactive to go back and forward** 
+2. **Recommend if Any of the stocks is worth purchasing or not based on slop of the close prices of the stock of last 6 month**
 
 Modules and libraries used
 
@@ -143,7 +148,7 @@ def get_news_data(start_date, end_date, main_url, page_number):
 
     return stock_symbols_arr
 
-'''Parameter preparation for the function news_data(start_date, end_date, main_url, page_number)
+'''Parameter preparation for the function get_news_data(start_date, end_date, main_url, page_number)
 we need all these parameters to compose the news url in the same way as it appears in the browser.
 start_date -the current date,
 end_date   -the date 15 days before from the current date
@@ -168,7 +173,7 @@ stock_symbols_arr
 
 
 
-"""# **Part 3 and 4**"""
+"""# **Part 3**"""
 
 # Importing libraries for plotting
 import plotly.express as px
@@ -184,20 +189,23 @@ def get_ticker_info(ticker_list):
   # k:v -> ticker:stock price data
   data = {}
   name = {}
-  volume={}
-  price={}
+
   for ticker in ticker_list:
     # Creating a yfinance object
     ticker_info = yf.Ticker(ticker)
     # Valid options are 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y,
     # 5y, 10y and ytd.
     # Fetching past 6 months year data
-    #print(ticker_info.info["currentPrice"])
     data[ticker] = ticker_info.history(period="6mo") 
+    #get the list of volumes for the 6month period
+    volume_list=data[ticker]['Volume'].values
+    #get the list of high price values for the 6month period
+    highprice_list=data[ticker]['High'].values
+    #get the name of the ticker 
     name[ticker] = ticker_info.info["shortName"]
-    volume[ticker]=ticker_info.info["volume"]
-    price[ticker]=ticker_info.info["currentPrice"]
     print("The stock price for", ticker_info.info["shortName"], " is ", ticker_info.info["currentPrice"], "and the stock volume is ", ticker_info.info["volume"], ".")
+    print("Volumes for 6 months are", volume_list)
+    print("High price values for 6 months are", highprice_list)
 
 # Generating 3 random indexes
 #print(stock_symbols_arr)
@@ -211,10 +219,11 @@ ticker_list
 
 get_ticker_info(ticker_list)
 
+"""# **Part 4**"""
+
 # Function to plot 2 time series using plotly, one for Volume and another for Closing Price
 def plot_time_series(ticker, df, nm_df):
   # Inputs: ticker symbol, and related DataFrame
-
   # To plot Volume
   fig = px.line(df, x=df.index, y="Volume", title= (nm_df+" "+ticker))
   # Adding range slider and buttons for ranges
@@ -231,7 +240,6 @@ def plot_time_series(ticker, df, nm_df):
       )
   )
   fig.show()
-
   # To plot closing price
   fig = px.line(df, x=df.index, y="Close", title=(nm_df+" "+ticker))
   # Adding range slider and buttons for ranges
@@ -252,10 +260,15 @@ def plot_time_series(ticker, df, nm_df):
 # Plotting Volume and Close price for each ticker in data
 data = {}
 name={}
+ticker_list={"aa",'sss'}
 for ticker in ticker_list:
+  #get the ticker information
   ticker_info = yf.Ticker(ticker)
+  #dict to save the ticker history
   data[ticker] = ticker_info.history(period="6mo") 
+  #dict to save the ticker name
   name[ticker] = ticker_info.info["shortName"]
+  #pass the parameters to the function
   plot_time_series(ticker, data[ticker], name[ticker])
 
 """# **Extra part**
@@ -294,7 +307,88 @@ def candlestick(ticker, df, nm_df):
 data = {}
 name={}
 for ticker in ticker_list:
+  #get the ticker information
   ticker_info = yf.Ticker(ticker)
+  #dict to save the ticker history
   data[ticker] = ticker_info.history(period="6mo") 
+  #dict to save the ticker name
   name[ticker] = ticker_info.info["shortName"]
+  #pass the parameters to the function
   candlestick(ticker, data[ticker], name[ticker])
+
+"""# **Optional Part**"""
+
+import numpy as np
+
+import pandas as pd
+from datetime import datetime
+import matplotlib.pyplot as plt
+plt.style.use('fivethirtyeight')
+# https://numpy.org/doc/stable/reference/generated/numpy.polyfit.html
+# if the slope is a +ve value --> increasing trend
+# if the slope is a -ve value --> decreasing trend
+# if the slope is a zero value --> No trend
+
+def trendline(index,data, order=1):
+    coeffs = np.polyfit(index, list(data), order)
+    slope = coeffs[-2]
+    return float(slope)
+
+# Visualisation of stock trend
+def visualize_trend (ticker, data):
+  # show a new data frame that contains the stocks adjusted close price.
+  df = pd.DataFrame()
+  df[ticker] = data[ticker]['Close'].values
+  df
+
+  #Create the 30 day simple moving average
+  SMA30 = df.rolling(window=30).mean()
+  SMA30
+
+  #Create the 100 day simple moving average
+  SMA100 = df.rolling(window=100).mean()
+  SMA100
+
+  # Visually Show The Stock and The Moving Averages
+  # Create the title 
+  title = ticker + ' : Adj. Close Price History Simple Moving Averages   '
+  #Get the stocks
+  my_stocks = df
+    
+  #Create and plot the graph
+  #width = 12.2in, height = 4.5
+  plt.figure(figsize=(12.2,4.5)) 
+  plt.plot( my_stocks[ticker],  label=ticker)
+  plt.plot( SMA30[ticker],  label='SMA30')
+  plt.plot( SMA100[ticker],  label='SMA100')
+    
+  plt.title(title)
+  plt.ylabel('Adj. Price USD ($)',fontsize=18)
+  plt.legend( loc='upper left')
+  plt.show()
+
+
+data = {}
+name={}
+result_final = list()
+for ticker in ticker_list:
+  ticker_info = yf.Ticker(ticker)
+  #dict to save the ticker history
+  data[ticker] = ticker_info.history(period="6mo") 
+  #dict to save the ticker name
+  name[ticker] = ticker_info.info["shortName"]
+
+  # Trend visualisation
+  visualize_trend(ticker , data)
+
+  #list to get the values of close for the 6 months period of time
+  List=data[ticker]['Close'].values.tolist()
+  index = list(range(0,len(List)))
+  resultent=trendline(index,List)
+
+  if resultent < 0 :
+    print(ticker + " : based on trend " + "NOT BUY STOCK\n")
+  elif resultent > 0.1:
+    print(ticker + " : based on trend " + "BUY STOCK\n")
+  else:
+    print(ticker + " : based on trend " + "WAIT BEFORE BUYING STOCK\n")
