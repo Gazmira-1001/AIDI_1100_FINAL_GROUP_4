@@ -19,21 +19,23 @@ Group Members:
 *   Parmar, Niravkumar
 *   Issac, Dennis
 
-Course code:  AIDI_1100; submission date: 12-04-2022(DD-MM-YYYY)???
+Course code:  AIDI_1100; submission date: 18-04-2022(DD-MM-YYYY)
 
 ---
 
-This project consists of 4 parts: 
+This project consists of 4 mandatory parts,one extra part and one the optional part: 
 1.   Scan/sparse: is implemented in the function get_news_data, it contains the instructions: 1.the url is composed 2. the get request is executed for the news url and 3. parsing the request by using BeautifulSoap and the parser html5lib.
 2.   Track/Store: a. is implemented in the function get_news_data by localising the div class which contains the news information for the specified period of time. After accessing the information, the function stores it on the excel file
 b.is implemented the function get_stock_data, which is called inside get_news_data and has an array parameter from which are extracted all the tickers with the pattern NASDAQ:
 1.   Retrieve Data consists of a. selecting randomly three stock symbols 
 and b.get_ticker_info function which prints stock data(volume, price)
-2.   Visualize consists of two functions: **1**.plot_time_series, which plots dinamically 2 time series using plotly, one for Volume and another for Closing Price, the results on the graphs appear for different periode of time(monthly, for 6 months,Year to date (YTD) refers to the period of time beginning the first day of the current calendar year or fiscal year up to the current date, yearly and all. 
+2.   Visualize consists of function: **1**.plot_time_series, which plots dinamically 2 time series using plotly, one for Volume and another for Closing Price, the results on the graphs appear for different periode of time(monthly, for 6 months,Year to date (YTD) refers to the period of time beginning the first day of the current calendar year or fiscal year up to the current date, yearly and all. 
 
 **Extra part 
 1. **Candlestick function, which plots candlestick chart for each ticker in data for the same period as the 1st function.** **All charts have the feature stepmode="backward", which does the charts user-interactive to go back and forward** 
-2. **Recommend if Any of the stocks is worth purchasing or not based on slop of the close prices of the stock of last 6 month**
+
+Optional part
+1. **Recommend if Any of the stocks is worth purchasing or not based on slop of the close prices of the stock of last 6 month**
 
 Modules and libraries used
 
@@ -97,8 +99,8 @@ def get_news_data(start_date, end_date, main_url, page_number):
         soup = BeautifulSoup(req.text, 'html5lib')
         #close the connection, since we have the content now on variable soup
         req.close()
-        # for loop to find the content of all div-s with class row arabiclistingcards
-        for div in soup.find_all("div", class_="row arabiclistingcards"):
+        # for loop to find the content of all div-s with class row arabiclistingcards and English language articles only
+        for div in soup.find_all("div", class_="row arabiclistingcards", lang = "en-US"):
 
             date_time_temp = div.find("small").text.replace(",", " ").split()
             month = months[date_time_temp[0]]
@@ -260,7 +262,6 @@ def plot_time_series(ticker, df, nm_df):
 # Plotting Volume and Close price for each ticker in data
 data = {}
 name={}
-ticker_list={"aa",'sss'}
 for ticker in ticker_list:
   #get the ticker information
   ticker_info = yf.Ticker(ticker)
