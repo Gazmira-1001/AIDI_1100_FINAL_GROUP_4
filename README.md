@@ -6,7 +6,7 @@
 Brahushi Gazmira | Patel Khaleel | Jivnani Ravina | Parmar Niravkumar | Issac Dennis
 
 ## Course code: 
-AIDI_1100 - Introduction to Artificial Intelligence 
+AIDI_1100 - Introduction to AI development
 
 ## Submission Date:
 12-04-2022
